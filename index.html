@@ -1,408 +1,866 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Los Puertos Des Vivos</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #f8f2e7;
-      --card: rgba(255,255,255,0.78);
-      --text: #2b1d14;
-      --muted: #6a5648;
-      --accent: #c0392b;
-      --accent-2: #e9a03b;
-      --green: #2e7d32;
-      --shadow: 0 20px 60px rgba(43, 29, 20, 0.12);
-      --radius: 22px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Coach Tommy</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%230a0e1a"/><text x="50" y="68" font-family="Arial Black" font-size="56" font-weight="900" text-anchor="middle" fill="%234a6cf7">CT</text></svg>'>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0a0e1a;
+    --card: #141925;
+    --card-2: #1a2030;
+    --border: #1f2535;
+    --text: #e8eaed;
+    --muted: #8b94a8;
+    --accent: #4a6cf7;
+    --accent-dim: #2d4499;
+    --success: #27ae60;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  body { min-height: 100vh; min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+  button { font-family: inherit; font-size: inherit; cursor: pointer; border: none; }
+  input, textarea { font-family: inherit; font-size: inherit; color: inherit; background: transparent; border: none; outline: none; width: 100%; }
+  textarea { resize: none; }
 
-    * { box-sizing: border-box; }
+  /* Layout */
+  .app { max-width: 720px; margin: 0 auto; padding: 16px 16px 100px; padding-top: max(16px, env(safe-area-inset-top)); }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .header h1 .accent { color: var(--accent); }
+  .header-meta { font-size: 12px; color: var(--muted); text-align: right; }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--card);
+    color: var(--text); display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); transition: background 0.15s;
+  }
+  .icon-btn:active { background: var(--card-2); }
 
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(233,160,59,0.18), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(192,57,43,0.14), transparent 30%),
-        var(--bg);
-      line-height: 1.6;
-    }
+  /* Cards */
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; margin-bottom: 12px;
+  }
+  .card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .card-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 
-    a { color: inherit; text-decoration: none; }
+  /* Streak / progress */
+  .streak-card { background: linear-gradient(135deg, var(--card) 0%, var(--card-2) 100%); }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat { text-align: center; }
+  .stat-value { font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 12px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); transition: width 0.4s ease; }
 
-    .container {
-      width: min(1120px, calc(100% - 32px));
-      margin: 0 auto;
-    }
+  /* Buttons */
+  .btn {
+    width: 100%; padding: 14px; border-radius: 12px; font-weight: 600;
+    background: var(--accent); color: white; transition: opacity 0.15s, transform 0.05s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--card-2); color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: var(--danger); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-sm { padding: 10px 14px; font-size: 13px; }
 
-    header {
-      position: sticky;
-      top: 0;
-      backdrop-filter: blur(14px);
-      background: rgba(248, 242, 231, 0.8);
-      border-bottom: 1px solid rgba(43, 29, 20, 0.08);
-      z-index: 20;
-    }
+  /* Schedule slots */
+  .slot {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: var(--card-2); border-radius: 10px; margin-bottom: 6px;
+    border: 1px solid var(--border);
+  }
+  .slot-time { font-weight: 700; font-size: 13px; color: var(--accent); min-width: 48px; }
+  .slot-input { flex: 1; padding: 4px 0; font-size: 14px; }
+  .slot-input::placeholder { color: var(--muted); }
+  .slot.done { opacity: 0.5; }
+  .slot.current { border-color: var(--accent); background: rgba(74, 108, 247, 0.08); }
 
-    .nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 0;
-    }
+  /* Modals */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 100; display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--bg); border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0; width: 100%; max-width: 720px;
+    max-height: 92vh; display: flex; flex-direction: column;
+    animation: slideUp 0.25s ease;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto; }
+  .modal-header {
+    padding: 6px 16px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h2 { font-size: 17px; font-weight: 700; }
+  .modal-body { padding: 16px; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
+  .close-btn { background: transparent; color: var(--muted); font-size: 22px; padding: 4px 8px; }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
+  /* Chat */
+  .chat-messages { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
+  .msg { padding: 10px 14px; border-radius: 14px; max-width: 88%; line-height: 1.45; word-wrap: break-word; white-space: pre-wrap; }
+  .msg-user { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+  .msg-coach { align-self: flex-start; background: var(--card-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .msg-system { align-self: center; background: transparent; color: var(--muted); font-size: 12px; font-style: italic; padding: 4px; }
+  .typing { display: inline-flex; gap: 3px; padding: 12px 16px; background: var(--card-2); border-radius: 14px; align-self: flex-start; border: 1px solid var(--border); }
+  .typing span { width: 6px; height: 6px; background: var(--muted); border-radius: 50%; animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+  .chat-input-row { display: flex; gap: 8px; align-items: flex-end; padding: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+  .chat-input-row textarea { max-height: 120px; min-height: 24px; line-height: 1.4; padding: 4px 0; }
+  .send-btn { background: var(--accent); color: white; width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .send-btn:disabled { background: var(--card-2); color: var(--muted); }
 
-    .brand-badge {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: white;
-      font-weight: 800;
-      box-shadow: var(--shadow);
-    }
+  /* Emergency button */
+  .emergency-btn {
+    position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); right: 16px;
+    width: 60px; height: 60px; border-radius: 50%; background: var(--danger);
+    color: white; font-size: 24px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(231, 76, 60, 0.45);
+    z-index: 50; transition: transform 0.1s;
+  }
+  .emergency-btn:active { transform: scale(0.92); }
 
-    nav ul {
-      display: flex;
-      gap: 22px;
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card);
+    border-top: 1px solid var(--border); display: flex; justify-content: space-around;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom)); z-index: 40;
+    max-width: 720px; margin: 0 auto;
+  }
+  .nav-btn {
+    background: transparent; color: var(--muted); padding: 8px 14px;
+    border-radius: 10px; display: flex; flex-direction: column; align-items: center;
+    gap: 2px; font-size: 11px; font-weight: 600;
+  }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.active { color: var(--accent); }
 
-    .cta {
-      padding: 11px 18px;
-      border-radius: 999px;
-      background: var(--text);
-      color: white;
-      font-weight: 600;
-    }
+  /* Settings */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .field input, .field textarea {
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; font-size: 14px;
+  }
 
-    .hero {
-      padding: 72px 0 54px;
-    }
+  /* Notification banner */
+  .banner {
+    background: var(--warning); color: #1a1a1a; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .banner.error { background: var(--danger); color: white; }
+  .banner.info { background: var(--accent-dim); color: white; }
 
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 28px;
-      align-items: center;
-    }
+  .small { font-size: 12px; color: var(--muted); }
+  .empty-state { text-align: center; padding: 40px 16px; color: var(--muted); }
+  .empty-state .big { font-size: 32px; margin-bottom: 8px; }
 
-    .eyebrow {
-      display: inline-block;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(233,160,59,0.18);
-      color: #8a5516;
-      font-weight: 700;
-      font-size: 0.85rem;
-      margin-bottom: 18px;
-    }
-
-    h1, h2, h3 {
-      margin: 0 0 14px;
-      font-family: 'Playfair Display', serif;
-      line-height: 1.05;
-    }
-
-    h1 {
-      font-size: clamp(2.6rem, 5vw, 5rem);
-      max-width: 10ch;
-    }
-
-    .hero p {
-      color: var(--muted);
-      font-size: 1.04rem;
-      max-width: 58ch;
-      margin-bottom: 26px;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 13px 20px;
-      border-radius: 999px;
-      font-weight: 700;
-      border: 1px solid transparent;
-      transition: transform 0.2s ease, opacity 0.2s ease;
-    }
-
-    .btn:hover { transform: translateY(-1px); opacity: 0.95; }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #a22e23);
-      color: white;
-      box-shadow: var(--shadow);
-    }
-
-    .btn-secondary {
-      border-color: rgba(43, 29, 20, 0.15);
-      background: rgba(255,255,255,0.55);
-    }
-
-    .hero-card {
-      position: relative;
-      min-height: 520px;
-      border-radius: 34px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      background:
-        linear-gradient(to top, rgba(31, 18, 10, 0.72), rgba(31, 18, 10, 0.12)),
-        url('https://images.unsplash.com/photo-1613514785940-daed07799d9b?auto=format&fit=crop&w=1200&q=80') center/cover;
-    }
-
-    .hero-card-content {
-      position: absolute;
-      inset: auto 0 0 0;
-      padding: 28px;
-      color: white;
-    }
-
-    .hero-card span {
-      display: inline-block;
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.16);
-      margin-bottom: 12px;
-      font-size: 0.9rem;
-    }
-
-    section {
-      padding: 34px 0;
-    }
-
-    .section-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: end;
-      margin-bottom: 24px;
-    }
-
-    .section-head p {
-      color: var(--muted);
-      max-width: 60ch;
-      margin: 0;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid rgba(43, 29, 20, 0.08);
-      border-radius: var(--radius);
-      padding: 22px;
-      box-shadow: var(--shadow);
-    }
-
-    .menu-item {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .price {
-      color: var(--accent);
-      font-weight: 800;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    .about {
-      display: grid;
-      grid-template-columns: 0.95fr 1.05fr;
-      gap: 24px;
-      align-items: center;
-    }
-
-    .about-image {
-      min-height: 380px;
-      border-radius: 30px;
-      background:
-        linear-gradient(to top, rgba(31,18,10,0.35), rgba(31,18,10,0.08)),
-        url('https://images.unsplash.com/photo-1565299585323-38174c4a6f73?auto=format&fit=crop&w=1200&q=80') center/cover;
-      box-shadow: var(--shadow);
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-top: 18px;
-    }
-
-    .info-box {
-      padding: 18px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.6);
-      border: 1px solid rgba(43, 29, 20, 0.08);
-    }
-
-    .contact {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 22px;
-    }
-
-    .contact-card {
-      background: linear-gradient(135deg, rgba(192,57,43,0.96), rgba(143, 31, 23, 0.96));
-      color: white;
-      border-radius: 28px;
-      padding: 28px;
-      box-shadow: var(--shadow);
-    }
-
-    .contact-card .muted {
-      color: rgba(255,255,255,0.8);
-    }
-
-    .hours li,
-    .contact-list li {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-      list-style: none;
-    }
-
-    .map-placeholder {
-      min-height: 100%;
-      border-radius: 28px;
-      padding: 28px;
-      background: linear-gradient(135deg, rgba(46,125,50,0.15), rgba(233,160,59,0.16));
-      border: 1px solid rgba(43,29,20,0.08);
-      box-shadow: var(--shadow);
-    }
-
-    footer {
-      padding: 32px 0 46px;
-      color: var(--muted);
-      font-size: 0.94rem;
-    }
-
-    @media (max-width: 920px) {
-      .hero-grid,
-      .about,
-      .contact,
-      .cards,
-      .info-grid {
-        grid-template-columns: 1fr;
-      }
-
-      nav ul { display: none; }
-      h1 { max-width: none; }
-      .hero-card { min-height: 400px; }
-    }
-  </style>
+  /* Hide scrollbar but allow scroll */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
 </head>
 <body>
-  <header>
-    <div class="container nav">
-      <a href="#top" class="brand">
-        <div class="brand-badge">LP</div>
-        <span>Los Puertos Des Vivos</span>
-      </a>
-      <nav>
-        <ul>
-          <li><a href="#menu">Menu</a></li>
-          <li><a href="#about">Notre histoire</a></li>
-          <li><a href="#contact">Contact</a></li>
-        </ul>
-      </nav>
-      <a class="cta" href="#contact">Réserver</a>
+
+<div class="app" id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Coach<span class="accent">.</span></h1>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div class="header-meta">
+        <div id="todayDate"></div>
+        <div id="todayTime" class="small"></div>
+      </div>
+      <button class="icon-btn" onclick="openModal('settings')" title="Réglages">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
     </div>
-  </header>
+  </div>
 
-  <main id="top">
-    <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <div class="eyebrow">Cuisine mexicaine authentique & chaleureuse</div>
-          <h1>Les saveurs du Mexique, servies avec âme.</h1>
-          <p>
-            Bienvenue chez <strong>Los Puertos Des Vivos</strong>, un restaurant mexicain élégant et convivial où tacos grillés, guacamole maison et cocktails épicés se rencontrent dans une ambiance solaire.
-          </p>
-          <div class="hero-actions">
-            <a href="#menu" class="btn btn-primary">Découvrir le menu</a>
-            <a href="#contact" class="btn btn-secondary">Voir les horaires</a>
-          </div>
-        </div>
-        <div class="hero-card">
-          <div class="hero-card-content">
-            <span>Signature du chef</span>
-            <h2>Tacos al pastor & margarita maison</h2>
-            <p>Des produits frais, des épices équilibrées, et une vraie identité visuelle simple mais raffinée.</p>
-          </div>
-        </div>
+  <!-- API key warning -->
+  <div id="apiKeyBanner" class="banner error" style="display:none;">
+    Clé API Claude manquante. <a href="#" style="color:white;text-decoration:underline;margin-left:4px;" onclick="openModal('settings');return false;">Configurer</a>
+  </div>
+
+  <!-- Streak + Progress -->
+  <div class="card streak-card">
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-value" id="streakValue">0</div>
+        <div class="stat-label">Streak</div>
       </div>
-    </section>
-
-    <section id="menu">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <h2>Nos incontournables</h2>
-            <p>Une sélection courte, lisible et gourmande, pensée pour donner envie dès le premier regard.</p>
-          </div>
-        </div>
-        <div class="cards">
-          <article class="card menu-item">
-            <h3>Tacos al Pastor</h3>
-            <div class="price">12€</div>
-            <p class="muted">Porc mariné, ananas grillé, oignons rouges, coriandre fraîche et salsa maison.</p>
-          </article>
-          <article class="card menu-item">
-            <h3>Quesadilla Verde</h3>
-            <div class="price">11€</div>
-            <p class="muted">Tortilla dorée, fromage fondant, poulet épicé, avocat et sauce verte douce.</p>
-          </article>
-          <article class="card menu-item">
-            <h3>Guacamole de la Casa</h3>
-            <div class="price">8€</div>
-            <p class="muted">Avocat frais, citron vert, tomate, coriandre et chips de maïs croustillantes.</p>
-          </article>
-        </div>
+      <div class="stat">
+        <div class="stat-value" id="todayProgress">0/0</div>
+        <div class="stat-label">Aujourd'hui</div>
       </div>
-    </section>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
 
-    <section id="about">
-      <div class="container about">
-        <div class="about-image"></div>
-        <div>
-          <h2>Une ambiance vivante, simple et élégante</h2>
-          <p class="muted">
-            Los Puertos Des Vivos mélange chaleur mexicaine, matières naturelles et lumière dorée pour créer un lieu accueillant, parfait pour un dîner à deux, une soirée entre amis ou un déjeuner en terrasse.
-          </p>
-          <div class="info-grid">
-            <div class=
+  <!-- Today's plan -->
+  <div class="card">
+    <div class="card-row" style="margin-bottom:12px;">
+      <div class="card-title" style="margin:0;">Plan du jour</div>
+      <button class="btn-sm btn-ghost" onclick="openModal('briefing')" id="briefingBtn">Briefing</button>
+    </div>
+    <div id="planList">
+      <div class="empty-state">
+        <div class="big">↗</div>
+        <div>Lance ton briefing matin</div>
+        <div class="small" style="margin-top:6px;">Le coach valide ton planning</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="openModal('chat')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Coach
+    </button>
+    <button class="btn" onclick="manualCheckin()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      Check-in
+    </button>
+  </div>
+
+</div>
+
+<!-- Emergency button -->
+<button class="emergency-btn" onclick="emergencyMode()" title="URGENCE">SOS</button>
+
+<!-- ========== MODALS ========== -->
+
+<!-- Briefing Modal -->
+<div class="modal-overlay" id="modal-briefing">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2 id="briefingTitle">Briefing matin</h2>
+      <button class="close-btn" onclick="closeModal('briefing')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="small" style="margin-bottom:14px;">Remplis ton planning. Heure par heure. Le coach validera (ou pas).</div>
+      <div id="briefingSlots"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="submitBriefing()">Soumettre au coach</button>
+    </div>
+  </div>
+</div>
+
+<!-- Check-in Modal -->
+<div class="modal-overlay" id="modal-checkin">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2>Check-in <span id="checkinTime" style="color:var(--accent)"></span></h2>
+      <button class="close-btn" onclick="closeModal('checkin')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title">Prévu</div>
+        <div id="checkinPlanned" style="font-size:15px;">—</div>
+      </div>
+      <div class="field">
+        <label>Qu'as-tu fait ?</label>
+        <textarea id="checkinActual" rows="3" placeholder="Sois précis. Pas de bullshit."></textarea>
+      </div>
+      <div id="checkinResponse" style="margin-top:14px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="submitCheckinBtn" onclick="submitCheckin()">Soumettre</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat Modal -->
+<div class="modal-overlay" id="modal-chat">
+  <div class="modal" style="height:92vh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2>Coach</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="close-btn" onclick="clearChat()" title="Effacer">⟲</button>
+        <button class="close-btn" onclick="closeModal('chat')">×</button>
+      </div>
+    </div>
+    <div class="modal-body" id="chatBody">
+      <div class="chat-messages" id="chatMessages"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="chat-input-row">
+        <textarea id="chatInput" rows="1" placeholder="Parle au coach…" oninput="autoGrow(this)" onkeydown="chatKey(event)"></textarea>
+        <button class="send-btn" id="chatSendBtn" onclick="sendChat()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2>Réglages</h2>
+      <button class="close-btn" onclick="closeModal('settings')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Clé API Claude</label>
+        <input type="password" id="settingsApiKey" placeholder="sk-ant-...">
+        <div class="small" style="margin-top:6px;">Stockée localement uniquement.</div>
+      </div>
+      <div class="field">
+        <label>Heure de début (briefing matin)</label>
+        <input type="number" id="settingsStartHour" min="4" max="12" value="6">
+      </div>
+      <div class="field">
+        <label>Heure de fin (bilan soir)</label>
+        <input type="number" id="settingsEndHour" min="18" max="24" value="22">
+      </div>
+      <div class="field">
+        <label>Notifications horaires</label>
+        <button class="btn btn-secondary" id="notifBtn" onclick="requestNotifications()">Activer les notifications</button>
+      </div>
+      <div class="field">
+        <label>Données</label>
+        <button class="btn btn-ghost" onclick="resetData()" style="color:var(--danger)">Tout réinitialiser</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="saveSettings()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+//==========================================================================
+// COACH TOMMY APP — Skeleton v0.1
+// Features: briefing matin, check-in horaire, chat Claude API
+//==========================================================================
+
+const STORAGE_KEY = 'coach_tommy_v1';
+const CLAUDE_MODEL = 'claude-sonnet-4-5';
+
+// ---------- Supabase ----------
+const SUPABASE_URL = 'https://hynaqqacaclbctjejzdj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5bmFxcWFjYWNsYmN0amVqemRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMTQwNzksImV4cCI6MjA5MzY5MDA3OX0.-XWZjM9mhfJMKLRmizitM9o4A8VvB2WWWjC8wB-CvyM';
+const SB_HEADERS = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+
+async function sbLoad() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/coach_state?id=eq.allan&select=state`, { headers: SB_HEADERS });
+    if (!res.ok) throw new Error('sbLoad ' + res.status);
+    const rows = await res.json();
+    if (rows.length && rows[0].state && Object.keys(rows[0].state).length > 0) {
+      state = { ...state, ...rows[0].state };
+      // Reset daily transient if new day
+      const today = todayStr();
+      if (state.todayPlan && state.todayPlan.date !== today) {
+        state.todayPlan = null;
+        state.checkIns = [];
+      }
+    }
+  } catch(e) { console.warn('Supabase load failed, using localStorage:', e); }
+}
+
+async function sbSave() {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/coach_state?id=eq.allan`, {
+      method: 'PATCH',
+      headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ state, updated_at: new Date().toISOString() })
+    });
+  } catch(e) { console.warn('Supabase save failed:', e); }
+  // Always keep localStorage as fallback
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+const COACH_SYSTEM = `Tu es le coach personnel d'Allan, basé à Bangkok. Objectif : transformation radicale en 90 jours.
+
+Ton rôle : pousser Allan à passer à l'action, sortir de la procrastination, ne tolérer aucune excuse, briser les boucles dopaminergiques (réseaux, écrans, distractions stériles).
+
+TON STYLE :
+- Intransigeant, exigeant, direct
+- Bienveillant mais sans filtre — tu ne ménages jamais
+- Phrases courtes, percutantes
+- Aucun emoji, aucune fioriture
+- Tu tutoies Allan
+- Tu vises l'action concrète, pas le confort émotionnel
+- Si Allan dévie : tu le confrontes, sec
+- Si Allan exécute : reconnaissance brève, pression maintenue
+- Tu détectes les rationalisations, les excuses déguisées, les fuites
+- Quand Allan est en vrille / mode SOS : tu le sors de l'inertie brutalement, ordres clairs, action immédiate
+
+CONTEXTE :
+- Allan vit à Bangkok
+- Système de points : haute valeur (prospection, vente) = 3pts, moyen (technique, contenu) = 2pts, routine (sport, organisation) = 1pt
+- Tâches haute valeur prioritaires : prospects contactés, RDV bookés, ventes closes
+- Récompenses débloquées par points
+
+Réponds en français. Va à l'essentiel.`;
+
+// ---------- State ----------
+let state = {
+  apiKey: '',
+  startHour: 6,
+  endHour: 22,
+  todayPlan: null,        // { date, slots: { "06:00": "task" }, validatedByCoach: bool }
+  checkIns: [],           // [{ time, planned, actual, coachReply, ok }]
+  chatHistory: [],        // [{ role, content }]
+  streak: 0,
+  lastDate: null,
+  notifEnabled: false
+};
+
+function loadState() {
+  // Immediate load from localStorage while Supabase fetches in background
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = { ...state, ...JSON.parse(raw) };
+  } catch(e) {}
+  const today = todayStr();
+  if (state.todayPlan && state.todayPlan.date !== today) {
+    state.todayPlan = null;
+    state.checkIns = [];
+  }
+}
+
+function saveState() {
+  sbSave();
+}
+
+// ---------- Utils ----------
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+function nowHHMM() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function currentHourSlot() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':00';
+}
+function fmtDateFR() {
+  const d = new Date();
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function updateClock() {
+  document.getElementById('todayDate').textContent = fmtDateFR();
+  document.getElementById('todayTime').textContent = nowHHMM();
+}
+
+// ---------- Modals ----------
+function openModal(id) {
+  if (id === 'briefing') buildBriefingForm();
+  if (id === 'chat') renderChat();
+  if (id === 'settings') loadSettingsForm();
+  document.getElementById('modal-' + id).classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById('modal-' + id).classList.remove('active');
+  document.body.style.overflow = '';
+}
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
+});
+
+// ---------- Briefing ----------
+function buildBriefingForm() {
+  const isAfternoon = new Date().getHours() >= 12;
+  document.getElementById('briefingTitle').textContent = isAfternoon ? 'Briefing après-midi' : 'Briefing matin';
+  const start = isAfternoon ? 12 : state.startHour;
+  const end = state.endHour;
+  const existing = (state.todayPlan && state.todayPlan.slots) || {};
+  let html = '';
+  for (let h = start; h <= end; h++) {
+    const key = String(h).padStart(2, '0') + ':00';
+    const val = existing[key] || '';
+    html += `<div class="slot">
+      <div class="slot-time">${key}</div>
+      <input class="slot-input" data-hour="${key}" value="${escapeHtml(val)}" placeholder="Ce que tu prévois…">
+    </div>`;
+  }
+  document.getElementById('briefingSlots').innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function submitBriefing() {
+  const inputs = document.querySelectorAll('#briefingSlots input');
+  const slots = state.todayPlan?.slots || {};
+  inputs.forEach(i => {
+    const v = i.value.trim();
+    if (v) slots[i.dataset.hour] = v;
+  });
+  if (Object.keys(slots).length === 0) {
+    alert('Remplis au moins un créneau.');
+    return;
+  }
+  state.todayPlan = { date: todayStr(), slots, validatedByCoach: false, validation: '' };
+  saveState();
+  renderPlan();
+
+  // Demander validation au coach
+  const slotsText = Object.entries(slots).sort().map(([h, t]) => `${h} — ${t}`).join('\n');
+  const userMsg = `Voici mon planning pour aujourd'hui :\n\n${slotsText}\n\nValide ou critique. Sois bref.`;
+
+  closeModal('briefing');
+  openModal('chat');
+
+  state.chatHistory.push({ role: 'user', content: userMsg });
+  saveState();
+  renderChat();
+  await streamCoachReply();
+}
+
+// ---------- Plan rendering ----------
+function renderPlan() {
+  const list = document.getElementById('planList');
+  if (!state.todayPlan || !state.todayPlan.slots || Object.keys(state.todayPlan.slots).length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="big">↗</div><div>Lance ton briefing matin</div><div class="small" style="margin-top:6px;">Le coach valide ton planning</div></div>`;
+    return;
+  }
+  const current = currentHourSlot();
+  const checkedHours = new Set(state.checkIns.map(c => c.time));
+  let html = '';
+  Object.entries(state.todayPlan.slots).sort().forEach(([h, t]) => {
+    const done = checkedHours.has(h);
+    const isCurrent = h === current;
+    html += `<div class="slot ${done ? 'done' : ''} ${isCurrent ? 'current' : ''}">
+      <div class="slot-time">${h}</div>
+      <div class="slot-input">${escapeHtml(t)}</div>
+      ${done ? '<span style="color:var(--success);font-size:13px;">✓</span>' : ''}
+    </div>`;
+  });
+  list.innerHTML = html;
+
+  // Progress
+  const total = Object.keys(state.todayPlan.slots).length;
+  const done = state.checkIns.length;
+  document.getElementById('todayProgress').textContent = `${done}/${total}`;
+  document.getElementById('progressFill').style.width = total ? `${(done/total)*100}%` : '0%';
+  document.getElementById('streakValue').textContent = state.streak;
+
+  // Briefing button label
+  const isAfternoon = new Date().getHours() >= 12;
+  document.getElementById('briefingBtn').textContent = state.todayPlan ? (isAfternoon ? 'Modifier' : 'Modifier') : 'Briefing';
+}
+
+// ---------- Check-in ----------
+function manualCheckin() {
+  const slot = currentHourSlot();
+  openCheckin(slot);
+}
+
+function openCheckin(slot) {
+  if (!state.todayPlan) {
+    alert('Fais ton briefing matin d\'abord.');
+    return;
+  }
+  const planned = state.todayPlan.slots[slot] || '(rien de prévu sur ce créneau)';
+  document.getElementById('checkinTime').textContent = slot;
+  document.getElementById('checkinPlanned').textContent = planned;
+  document.getElementById('checkinActual').value = '';
+  document.getElementById('checkinResponse').innerHTML = '';
+  document.getElementById('submitCheckinBtn').dataset.slot = slot;
+  document.getElementById('submitCheckinBtn').dataset.planned = planned;
+  document.getElementById('submitCheckinBtn').disabled = false;
+  document.getElementById('submitCheckinBtn').textContent = 'Soumettre';
+  openModal('checkin');
+}
+
+async function submitCheckin() {
+  const btn = document.getElementById('submitCheckinBtn');
+  const slot = btn.dataset.slot;
+  const planned = btn.dataset.planned;
+  const actual = document.getElementById('checkinActual').value.trim();
+  if (!actual) { alert('Réponds.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Envoi…';
+
+  const resp = document.getElementById('checkinResponse');
+  resp.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+
+  const userMsg = `[CHECK-IN ${slot}]\nPrévu : ${planned}\nFait : ${actual}\n\nVerdict bref. Si je dévie, recadre. Si j'exécute, valide et pousse plus loin.`;
+
+  try {
+    const reply = await callClaude([...state.chatHistory, { role: 'user', content: userMsg }]);
+    state.chatHistory.push({ role: 'user', content: userMsg });
+    state.chatHistory.push({ role: 'assistant', content: reply });
+    state.checkIns.push({ time: slot, planned, actual, coachReply: reply, ts: Date.now() });
+    saveState();
+    resp.innerHTML = `<div class="msg msg-coach" style="max-width:100%;">${escapeHtml(reply)}</div>`;
+    btn.textContent = 'Fermer';
+    btn.disabled = false;
+    btn.onclick = () => { closeModal('checkin'); btn.onclick = submitCheckin; renderPlan(); };
+    renderPlan();
+  } catch (e) {
+    resp.innerHTML = `<div class="banner error">Erreur API: ${escapeHtml(e.message)}</div>`;
+    btn.textContent = 'Réessayer';
+    btn.disabled = false;
+  }
+}
+
+// ---------- Chat ----------
+function renderChat() {
+  const box = document.getElementById('chatMessages');
+  if (state.chatHistory.length === 0) {
+    box.innerHTML = `<div class="msg-system">Le coach attend. Sois direct.</div>`;
+    return;
+  }
+  box.innerHTML = state.chatHistory.map(m => {
+    const cls = m.role === 'user' ? 'msg-user' : 'msg-coach';
+    return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+  }).join('');
+  setTimeout(() => {
+    const body = document.getElementById('chatBody');
+    body.scrollTop = body.scrollHeight;
+  }, 50);
+}
+
+function autoGrow(t) {
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+}
+
+function chatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  autoGrow(input);
+  state.chatHistory.push({ role: 'user', content: text });
+  saveState();
+  renderChat();
+  await streamCoachReply();
+}
+
+async function streamCoachReply() {
+  const box = document.getElementById('chatMessages');
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  box.appendChild(typing);
+  document.getElementById('chatBody').scrollTop = 99999;
+  document.getElementById('chatSendBtn').disabled = true;
+
+  try {
+    const reply = await callClaude(state.chatHistory);
+    state.chatHistory.push({ role: 'assistant', content: reply });
+    saveState();
+    typing.remove();
+    renderChat();
+  } catch (e) {
+    typing.remove();
+    const err = document.createElement('div');
+    err.className = 'banner error';
+    err.textContent = 'Erreur: ' + e.message;
+    box.appendChild(err);
+  } finally {
+    document.getElementById('chatSendBtn').disabled = false;
+  }
+}
+
+function clearChat() {
+  if (!confirm('Effacer la conversation ?')) return;
+  state.chatHistory = [];
+  saveState();
+  renderChat();
+}
+
+// ---------- Claude API ----------
+async function callClaude(messages) {
+  if (!state.apiKey) throw new Error('Clé API manquante. Réglages.');
+
+  // Limit history sent (last 30 messages)
+  const trimmed = messages.slice(-30);
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,
+      system: COACH_SYSTEM,
+      messages: trimmed
+    })
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`HTTP ${res.status} — ${t.slice(0,200)}`);
+  }
+  const data = await res.json();
+  const txt = data.content?.[0]?.text || '(réponse vide)';
+  return txt.trim();
+}
+
+// ---------- Settings ----------
+function loadSettingsForm() {
+  document.getElementById('settingsApiKey').value = state.apiKey || '';
+  document.getElementById('settingsStartHour').value = state.startHour;
+  document.getElementById('settingsEndHour').value = state.endHour;
+  const btn = document.getElementById('notifBtn');
+  if (state.notifEnabled) { btn.textContent = 'Notifications actives'; btn.disabled = true; }
+}
+
+function saveSettings() {
+  state.apiKey = document.getElementById('settingsApiKey').value.trim();
+  state.startHour = parseInt(document.getElementById('settingsStartHour').value) || 6;
+  state.endHour = parseInt(document.getElementById('settingsEndHour').value) || 22;
+  saveState();
+  updateApiKeyBanner();
+  closeModal('settings');
+}
+
+function resetData() {
+  if (!confirm('Tout effacer (plan, check-ins, chat) ?')) return;
+  const k = state.apiKey;
+  state = { apiKey: k, startHour: 6, endHour: 22, todayPlan: null, checkIns: [], chatHistory: [], streak: 0, lastDate: null, notifEnabled: false };
+  saveState();
+  renderPlan();
+  closeModal('settings');
+}
+
+function updateApiKeyBanner() {
+  document.getElementById('apiKeyBanner').style.display = state.apiKey ? 'none' : 'flex';
+}
+
+// ---------- Notifications ----------
+async function requestNotifications() {
+  if (!('Notification' in window)) {
+    alert('Notifications non supportées sur ce navigateur.');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    state.notifEnabled = true;
+    saveState();
+    new Notification('Coach Tommy', { body: 'Notifications activées. À chaque heure pile.' });
+    document.getElementById('notifBtn').textContent = 'Notifications actives';
+    document.getElementById('notifBtn').disabled = true;
+  } else {
+    alert('Notifications refusées.');
+  }
+}
+
+function fireHourlyNotification(slot) {
+  if (!state.notifEnabled) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const planned = (state.todayPlan?.slots?.[slot]) || 'créneau libre';
+  const n = new Notification(`Check-in ${slot}`, {
+    body: `Prévu : ${planned}\nDis-moi ce que tu as fait.`,
+    tag: 'checkin-' + slot,
+    requireInteraction: true
+  });
+  n.onclick = () => { window.focus(); openCheckin(slot); n.close(); };
+}
+
+// Hourly trigger: check at startup + every minute
+let lastTriggeredHour = null;
+function tickHourly() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const slot = String(h).padStart(2,'0') + ':00';
+  // Trigger at minute 0 of each hour, between startHour and endHour
+  if (m === 0 && lastTriggeredHour !== h) {
+    if (h >= state.startHour && h <= state.endHour && state.todayPlan) {
+      fireHourlyNotification(slot);
+    }
+    lastTriggeredHour = h;
+  }
+  renderPlan();
+}
+
+// ---------- Emergency mode ----------
+async function emergencyMode() {
+  if (!confirm('SOS — Le coach va t\'envoyer un message brutal pour te sortir de la vrille. Confirmer ?')) return;
+  openModal('chat');
+  const userMsg = '[SOS] Je suis en vrille. Boucle dopaminergique, inertie. Sors-moi de là. Maintenant. Ordre clair, action immédiate.';
+  state.chatHistory.push({ role: 'user', content: userMsg });
+  saveState();
+  renderChat();
+  await streamCoachReply();
+}
+
+// ---------- Service worker (offline) ----------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW register failed', err));
+  });
+}
+
+// ---------- Init ----------
+loadState();
+updateClock();
+updateApiKeyBanner();
+renderPlan();
+setInterval(updateClock, 30 * 1000);
+setInterval(tickHourly, 30 * 1000);
+
+// First run hint
+if (!state.apiKey) {
+  setTimeout(() => openModal('settings'), 800);
+}
+
+// Load from Supabase async then refresh UI
+sbLoad().then(() => {
+  updateApiKeyBanner();
+  renderPlan();
+  renderChat();
+});
+</script>
+</body>
+</html>
