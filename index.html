@@ -200,6 +200,13 @@
   .empty-state { text-align: center; padding: 40px 16px; color: var(--muted); }
   .empty-state .big { font-size: 32px; margin-bottom: 8px; }
 
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  }
+
   /* Hide scrollbar but allow scroll */
   ::-webkit-scrollbar { width: 0; height: 0; }
 </style>
@@ -394,6 +401,10 @@
       <div class="field">
         <label>Données</label>
         <button class="btn btn-ghost" onclick="resetData()" style="color:var(--danger)">Tout réinitialiser</button>
+      </div>
+      <div class="field">
+        <label>Développement</label>
+        <button class="btn btn-ghost" onclick="clearCacheAndReload()">🔄 Vider le cache et recharger</button>
       </div>
     </div>
     <div class="modal-footer">
@@ -632,13 +643,17 @@ function renderPlan() {
     const text = typeof s === 'string' ? s : s.text;
     const cat = typeof s === 'string' ? 1 : (s.cat || 1);
     const catColor = cat === 3 ? '#e74c3c' : cat === 2 ? '#f39c12' : '#27ae60';
+    const pts = cat;
     const done = checkedHours.has(h);
     const isCurrent = h === current;
-    html += `<div class="slot ${done ? 'done' : ''} ${isCurrent ? 'current' : ''}">
+    html += `<div class="slot ${done ? 'done' : ''} ${isCurrent ? 'current' : ''}" style="cursor:${done?'default':'pointer'}" onclick="${done ? '' : `completeTask('${h}')`}">
       <div class="slot-time">${h}</div>
       <div class="slot-input">${escapeHtml(text)}</div>
       <div style="width:8px;height:8px;border-radius:50%;background:${catColor};flex-shrink:0;"></div>
-      ${done ? '<span style="color:var(--success);font-size:13px;">✓</span>' : ''}
+      ${done
+        ? '<span style="color:var(--success);font-size:16px;font-weight:800;">✓</span>'
+        : `<span style="font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;">+${pts}pt</span>`
+      }
     </div>`;
   });
   list.innerHTML = html;
@@ -650,6 +665,34 @@ function renderPlan() {
   document.getElementById('streakValue').textContent = state.streak;
   document.getElementById('briefingBtn').textContent = state.todayPlan ? 'Modifier' : 'Briefing';
   renderPoints();
+}
+
+function completeTask(hour) {
+  if (!state.todayPlan) return;
+  const already = state.checkIns.find(c => c.time === hour);
+  if (already) return;
+
+  const slotData = state.todayPlan.slots[hour];
+  const text = typeof slotData === 'string' ? slotData : slotData.text;
+  const cat = typeof slotData === 'string' ? 1 : (slotData.cat || 1);
+  const pts = cat;
+
+  state.checkIns.push({ time: hour, planned: text, actual: 'fait', cat, ts: Date.now() });
+  state.pointsTotal = (state.pointsTotal || 0) + pts;
+  saveState();
+  renderPlan();
+
+  // Flash feedback
+  const catLabel = cat === 3 ? 'HIGH VALUE' : cat === 2 ? 'MEDIUM' : 'ROUTINE';
+  showToast(`+${pts}pt${pts>1?'s':''} — ${catLabel}`);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--success);color:white;padding:10px 20px;border-radius:20px;font-weight:700;font-size:14px;z-index:200;animation:fadeInOut 1.8s ease forwards;white-space:nowrap;`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1800);
 }
 
 function renderPoints() {
@@ -837,6 +880,18 @@ async function callClaude(messages) {
   const data = await res.json();
   const txt = data.content?.[0]?.text || '(réponse vide)';
   return txt.trim();
+}
+
+async function clearCacheAndReload() {
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+  }
+  window.location.reload(true);
 }
 
 // ---------- Settings ----------
