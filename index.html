@@ -646,14 +646,14 @@ function renderPlan() {
     const pts = cat;
     const done = checkedHours.has(h);
     const isCurrent = h === current;
-    html += `<div class="slot ${done ? 'done' : ''} ${isCurrent ? 'current' : ''}" style="cursor:${done?'default':'pointer'}" onclick="${done ? '' : `completeTask('${h}')`}">
+    html += `<div class="slot ${done ? 'done' : ''} ${isCurrent ? 'current' : ''}" style="cursor:pointer" onclick="completeTask('${h}')">
+      <div style="width:22px;height:22px;border-radius:6px;border:2px solid ${done ? 'var(--success)' : 'var(--border)'};background:${done ? 'var(--success)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;">
+        ${done ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+      </div>
       <div class="slot-time">${h}</div>
       <div class="slot-input">${escapeHtml(text)}</div>
       <div style="width:8px;height:8px;border-radius:50%;background:${catColor};flex-shrink:0;"></div>
-      ${done
-        ? '<span style="color:var(--success);font-size:16px;font-weight:800;">✓</span>'
-        : `<span style="font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;">+${pts}pt</span>`
-      }
+      <span style="font-size:11px;font-weight:700;color:${done ? 'var(--success)' : 'var(--muted)'};flex-shrink:0;min-width:28px;text-align:right;">${done ? `+${pts}✓` : `+${pts}pt`}</span>
     </div>`;
   });
   list.innerHTML = html;
@@ -669,8 +669,19 @@ function renderPlan() {
 
 function completeTask(hour) {
   if (!state.todayPlan) return;
-  const already = state.checkIns.find(c => c.time === hour);
-  if (already) return;
+  const existingIdx = state.checkIns.findIndex(c => c.time === hour);
+
+  if (existingIdx !== -1) {
+    // Uncheck — remove checkin and deduct points
+    const ci = state.checkIns[existingIdx];
+    const pts = ci.cat || 1;
+    state.checkIns.splice(existingIdx, 1);
+    state.pointsTotal = Math.max(0, (state.pointsTotal || 0) - pts);
+    saveState();
+    renderPlan();
+    showToast(`-${pts}pt${pts>1?'s':''} annulé`);
+    return;
+  }
 
   const slotData = state.todayPlan.slots[hour];
   const text = typeof slotData === 'string' ? slotData : slotData.text;
@@ -682,7 +693,6 @@ function completeTask(hour) {
   saveState();
   renderPlan();
 
-  // Flash feedback
   const catLabel = cat === 3 ? 'HIGH VALUE' : cat === 2 ? 'MEDIUM' : 'ROUTINE';
   showToast(`+${pts}pt${pts>1?'s':''} — ${catLabel}`);
 }
@@ -975,9 +985,30 @@ function tickHourly() {
 
 // ---------- Emergency mode ----------
 async function emergencyMode() {
-  if (!confirm('SOS — Le coach va t\'envoyer un message brutal pour te sortir de la vrille. Confirmer ?')) return;
+  if (!confirm('SOS — Protocole STOP. Le coach t\'guide étape par étape. Confirmer ?')) return;
   openModal('chat');
-  const userMsg = '[SOS] Je suis en vrille. Boucle dopaminergique, inertie. Sors-moi de là. Maintenant. Ordre clair, action immédiate.';
+
+  const now = nowHHMM();
+  const todaySlots = state.todayPlan?.slots
+    ? Object.entries(state.todayPlan.slots).sort().map(([h,s]) => `${h} — ${typeof s==='string'?s:s.text}`).join('\n')
+    : 'Aucun planning défini';
+
+  const userMsg = `[SOS — PROTOCOLE STOP] ${now}
+
+Je suis en mode automatique inconscient — boucle dopaminergique, inertie, ou vrille.
+
+Applique le protocole STOP en 4 étapes CONCRÈTES et IMMÉDIATES :
+
+S — STOP DIGGING : dis-moi exactement quoi arrêter maintenant (téléphone, YouTube, etc.)
+T — TUNE IN : donne-moi 1 exercice physique immédiat (respiration, mouvement, saut)
+O — ONE SIMPLE TASK : donne-moi UNE micro-tâche ultra simple (max 5 min, adapte selon que je suis probablement au café ou chez moi à Bangkok)
+P — PROCEED : rappelle-moi la prochaine tâche productive de mon planning
+
+Mon planning du jour :
+${todaySlots}
+
+Sois directif, court, sans fioriture. Chaque étape = 1-2 phrases max.`;
+
   state.chatHistory.push({ role: 'user', content: userMsg });
   saveState();
   renderChat();
