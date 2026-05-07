@@ -95,6 +95,24 @@
   .slot.done { opacity: 0.5; }
   .slot.current { border-color: var(--accent); background: rgba(74, 108, 247, 0.08); }
 
+  /* Category buttons */
+  .cat-btns { display: flex; gap: 4px; flex-shrink: 0; }
+  .cat-btn {
+    width: 28px; height: 28px; border-radius: 8px; font-size: 11px; font-weight: 800;
+    background: var(--border); color: var(--muted); display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s; flex-shrink: 0;
+  }
+  .cat-btn.active-1 { background: #27ae60; color: white; }
+  .cat-btn.active-2 { background: #f39c12; color: white; }
+  .cat-btn.active-3 { background: #e74c3c; color: white; }
+
+  /* Points display */
+  .points-card { background: linear-gradient(135deg, #1a1f35 0%, #141925 100%); }
+  .points-total { font-size: 36px; font-weight: 900; color: var(--accent); letter-spacing: -2px; }
+  .points-breakdown { display: flex; gap: 12px; margin-top: 8px; }
+  .points-cat { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
   /* Modals */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
@@ -223,6 +241,25 @@
     </div>
     <div class="progress-bar">
       <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Points -->
+  <div class="card points-card">
+    <div class="card-row">
+      <div>
+        <div class="card-title" style="margin-bottom:4px;">Points du jour</div>
+        <div class="points-total" id="pointsTotal">0</div>
+        <div class="points-breakdown">
+          <div class="points-cat"><div class="dot" style="background:#e74c3c"></div><span id="pts3">0 high</span></div>
+          <div class="points-cat"><div class="dot" style="background:#f39c12"></div><span id="pts2">0 medium</span></div>
+          <div class="points-cat"><div class="dot" style="background:#27ae60"></div><span id="pts1">0 routine</span></div>
+        </div>
+      </div>
+      <div class="stat" style="text-align:right;">
+        <div class="stat-value" id="totalPoints" style="font-size:22px;">0</div>
+        <div class="stat-label">Total cumulé</div>
+      </div>
     </div>
   </div>
 
@@ -437,12 +474,14 @@ let state = {
   apiKey: '',
   startHour: 6,
   endHour: 22,
-  todayPlan: null,        // { date, slots: { "06:00": "task" }, validatedByCoach: bool }
-  checkIns: [],           // [{ time, planned, actual, coachReply, ok }]
+  todayPlan: null,        // { date, slots: { "06:00": { text, cat } }, validatedByCoach: bool }
+  checkIns: [],           // [{ time, planned, actual, coachReply, cat }]
   chatHistory: [],        // [{ role, content }]
   streak: 0,
   lastDate: null,
-  notifEnabled: false
+  notifEnabled: false,
+  pointsTotal: 0,         // cumulated all-time points
+  todayPoints: 0          // today's points
 };
 
 function loadState() {
@@ -511,13 +550,31 @@ function buildBriefingForm() {
   let html = '';
   for (let h = start; h <= end; h++) {
     const key = String(h).padStart(2, '0') + ':00';
-    const val = existing[key] || '';
+    const slot = existing[key] || {};
+    const text = typeof slot === 'string' ? slot : (slot.text || '');
+    const cat = typeof slot === 'string' ? 0 : (slot.cat || 0);
     html += `<div class="slot">
       <div class="slot-time">${key}</div>
-      <input class="slot-input" data-hour="${key}" value="${escapeHtml(val)}" placeholder="Ce que tu prévois…">
+      <input class="slot-input" data-hour="${key}" value="${escapeHtml(text)}" placeholder="Tâche…">
+      <div class="cat-btns">
+        <button class="cat-btn ${cat===1?'active-1':''}" data-hour="${key}" data-cat="1" onclick="setCat(this,1)" title="Routine">1</button>
+        <button class="cat-btn ${cat===2?'active-2':''}" data-hour="${key}" data-cat="2" onclick="setCat(this,2)" title="Medium">2</button>
+        <button class="cat-btn ${cat===3?'active-3':''}" data-hour="${key}" data-cat="3" onclick="setCat(this,3)" title="High value">3</button>
+      </div>
     </div>`;
   }
   document.getElementById('briefingSlots').innerHTML = html;
+}
+
+function setCat(btn, cat) {
+  const hour = btn.dataset.hour;
+  // Reset all cat buttons for this hour
+  document.querySelectorAll(`.cat-btn[data-hour="${hour}"]`).forEach(b => {
+    b.className = 'cat-btn';
+  });
+  // Toggle: if already active, deactivate
+  const wasActive = btn.classList.contains(`active-${cat}`);
+  if (!wasActive) btn.classList.add(`active-${cat}`);
 }
 
 function escapeHtml(s) {
@@ -528,19 +585,27 @@ async function submitBriefing() {
   const inputs = document.querySelectorAll('#briefingSlots input');
   const slots = state.todayPlan?.slots || {};
   inputs.forEach(i => {
-    const v = i.value.trim();
-    if (v) slots[i.dataset.hour] = v;
+    const text = i.value.trim();
+    if (text) {
+      const hour = i.dataset.hour;
+      const activeBtn = document.querySelector(`.cat-btn.active-1[data-hour="${hour}"], .cat-btn.active-2[data-hour="${hour}"], .cat-btn.active-3[data-hour="${hour}"]`);
+      const cat = activeBtn ? parseInt(activeBtn.dataset.cat) : 1;
+      slots[hour] = { text, cat };
+    }
   });
   if (Object.keys(slots).length === 0) {
     alert('Remplis au moins un créneau.');
     return;
   }
   state.todayPlan = { date: todayStr(), slots, validatedByCoach: false, validation: '' };
+  state.todayPoints = 0; // reset today points on new briefing
   saveState();
   renderPlan();
 
-  // Demander validation au coach
-  const slotsText = Object.entries(slots).sort().map(([h, t]) => `${h} — ${t}`).join('\n');
+  const slotsText = Object.entries(slots).sort().map(([h, s]) => {
+    const catLabel = s.cat === 3 ? 'HIGH' : s.cat === 2 ? 'MEDIUM' : 'ROUTINE';
+    return `${h} — ${s.text} [${catLabel}]`;
+  }).join('\n');
   const userMsg = `Voici mon planning pour aujourd'hui :\n\n${slotsText}\n\nValide ou critique. Sois bref.`;
 
   closeModal('briefing');
@@ -557,32 +622,51 @@ function renderPlan() {
   const list = document.getElementById('planList');
   if (!state.todayPlan || !state.todayPlan.slots || Object.keys(state.todayPlan.slots).length === 0) {
     list.innerHTML = `<div class="empty-state"><div class="big">↗</div><div>Lance ton briefing matin</div><div class="small" style="margin-top:6px;">Le coach valide ton planning</div></div>`;
+    renderPoints();
     return;
   }
   const current = currentHourSlot();
   const checkedHours = new Set(state.checkIns.map(c => c.time));
   let html = '';
-  Object.entries(state.todayPlan.slots).sort().forEach(([h, t]) => {
+  Object.entries(state.todayPlan.slots).sort().forEach(([h, s]) => {
+    const text = typeof s === 'string' ? s : s.text;
+    const cat = typeof s === 'string' ? 1 : (s.cat || 1);
+    const catColor = cat === 3 ? '#e74c3c' : cat === 2 ? '#f39c12' : '#27ae60';
     const done = checkedHours.has(h);
     const isCurrent = h === current;
     html += `<div class="slot ${done ? 'done' : ''} ${isCurrent ? 'current' : ''}">
       <div class="slot-time">${h}</div>
-      <div class="slot-input">${escapeHtml(t)}</div>
+      <div class="slot-input">${escapeHtml(text)}</div>
+      <div style="width:8px;height:8px;border-radius:50%;background:${catColor};flex-shrink:0;"></div>
       ${done ? '<span style="color:var(--success);font-size:13px;">✓</span>' : ''}
     </div>`;
   });
   list.innerHTML = html;
 
-  // Progress
   const total = Object.keys(state.todayPlan.slots).length;
   const done = state.checkIns.length;
   document.getElementById('todayProgress').textContent = `${done}/${total}`;
   document.getElementById('progressFill').style.width = total ? `${(done/total)*100}%` : '0%';
   document.getElementById('streakValue').textContent = state.streak;
+  document.getElementById('briefingBtn').textContent = state.todayPlan ? 'Modifier' : 'Briefing';
+  renderPoints();
+}
 
-  // Briefing button label
-  const isAfternoon = new Date().getHours() >= 12;
-  document.getElementById('briefingBtn').textContent = state.todayPlan ? (isAfternoon ? 'Modifier' : 'Modifier') : 'Briefing';
+function renderPoints() {
+  // Compute today points from checkIns
+  let p1 = 0, p2 = 0, p3 = 0;
+  state.checkIns.forEach(ci => {
+    const cat = ci.cat || 1;
+    if (cat === 1) p1++;
+    else if (cat === 2) p2++;
+    else if (cat === 3) p3++;
+  });
+  const todayPts = p1 * 1 + p2 * 2 + p3 * 3;
+  document.getElementById('pointsTotal').textContent = todayPts;
+  document.getElementById('pts1').textContent = `${p1} routine`;
+  document.getElementById('pts2').textContent = `${p2} medium`;
+  document.getElementById('pts3').textContent = `${p3} high`;
+  document.getElementById('totalPoints').textContent = state.pointsTotal || 0;
 }
 
 // ---------- Check-in ----------
@@ -596,7 +680,8 @@ function openCheckin(slot) {
     alert('Fais ton briefing matin d\'abord.');
     return;
   }
-  const planned = state.todayPlan.slots[slot] || '(rien de prévu sur ce créneau)';
+  const slotData = state.todayPlan.slots[slot];
+  const planned = typeof slotData === 'string' ? slotData : (slotData?.text || '(rien de prévu sur ce créneau)');
   document.getElementById('checkinTime').textContent = slot;
   document.getElementById('checkinPlanned').textContent = planned;
   document.getElementById('checkinActual').value = '';
@@ -621,15 +706,23 @@ async function submitCheckin() {
   const resp = document.getElementById('checkinResponse');
   resp.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
 
-  const userMsg = `[CHECK-IN ${slot}]\nPrévu : ${planned}\nFait : ${actual}\n\nVerdict bref. Si je dévie, recadre. Si j'exécute, valide et pousse plus loin.`;
+  // Get category for this slot
+  const slotData = state.todayPlan?.slots?.[slot];
+  const cat = typeof slotData === 'object' ? (slotData.cat || 1) : 1;
+  const catLabel = cat === 3 ? 'HIGH VALUE' : cat === 2 ? 'MEDIUM' : 'ROUTINE';
+  const pts = cat;
+
+  const userMsg = `[CHECK-IN ${slot}]\nPrévu : ${planned} [${catLabel} — ${pts}pt${pts>1?'s':''}]\nFait : ${actual}\n\nVerdict bref. Si je dévie, recadre. Si j'exécute, valide et pousse plus loin.`;
 
   try {
     const reply = await callClaude([...state.chatHistory, { role: 'user', content: userMsg }]);
     state.chatHistory.push({ role: 'user', content: userMsg });
     state.chatHistory.push({ role: 'assistant', content: reply });
-    state.checkIns.push({ time: slot, planned, actual, coachReply: reply, ts: Date.now() });
+    state.checkIns.push({ time: slot, planned, actual, coachReply: reply, cat, ts: Date.now() });
+    // Award points
+    state.pointsTotal = (state.pointsTotal || 0) + pts;
     saveState();
-    resp.innerHTML = `<div class="msg msg-coach" style="max-width:100%;">${escapeHtml(reply)}</div>`;
+    resp.innerHTML = `<div class="msg msg-coach" style="max-width:100%;">${escapeHtml(reply)}</div><div style="margin-top:10px;text-align:center;font-size:13px;color:var(--success);font-weight:700;">+${pts} pt${pts>1?'s':''} ${catLabel}</div>`;
     btn.textContent = 'Fermer';
     btn.disabled = false;
     btn.onclick = () => { closeModal('checkin'); btn.onclick = submitCheckin; renderPlan(); };
@@ -798,7 +891,8 @@ async function requestNotifications() {
 function fireHourlyNotification(slot) {
   if (!state.notifEnabled) return;
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const planned = (state.todayPlan?.slots?.[slot]) || 'créneau libre';
+  const slotData = state.todayPlan?.slots?.[slot];
+  const planned = typeof slotData === 'string' ? slotData : (slotData?.text || 'créneau libre');
   const n = new Notification(`Check-in ${slot}`, {
     body: `Prévu : ${planned}\nDis-moi ce que tu as fait.`,
     tag: 'checkin-' + slot,
